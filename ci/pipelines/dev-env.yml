@@ -12,6 +12,8 @@ resources:
     source:
       uri: https://github.com/alphagov/pay-omnibus
       branch: develop
+      paths:
+        - paas
 
   - name: paas-london
     type: cf-cli
@@ -110,6 +112,7 @@ jobs:
     serial: true
     plan:
       - get: omnibus
+        trigger: true
       - put: create-space
         resource: paas-london
         params:
@@ -117,12 +120,10 @@ jobs:
           space: ((space))
       - task: provision-space
         file: omnibus/ci/tasks/cf-task.yml
-        input_mapping:
-          workdir: omnibus
         params:
           CF_ORG: govuk-pay
           CF_SPACE: ((space))
-          COMMAND: workdir/paas/provision_space.sh
+          COMMAND: omnibus/paas/provision_space.sh
           DEPLOYER_USER: ((cf-username))
           DOCKER_APPS: 'true'
       - put: set-permissions

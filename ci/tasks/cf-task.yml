@@ -5,7 +5,7 @@ image_resource:
   source: { repository: governmentpaas/cf-cli }
 
 inputs:
-  - name: workdir
+  - name: omnibus
     optional: true
 
 params:
