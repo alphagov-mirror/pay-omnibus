@@ -15,6 +15,7 @@ groups:
       - deploy-publicauth-staging
       - deploy-selfservice-staging
       - deploy-notifications-staging
+      - smoke-test-user
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
@@ -37,6 +38,7 @@ groups:
 
   - name: Staging Smoke Tests
     jobs:
+      - smoke-test-user
       - card-payment-smoke-tests-staging
       - direct-debit-smoke-tests-staging
       - products-smoke-test-staging
@@ -53,7 +55,7 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: develop
+      branch: smoke-test-user
 
   - name: paas-staging
     type: cf-cli
@@ -340,10 +342,30 @@ jobs:
           <<: *paas-app
           app_name: notifications
 
+  - name: smoke-test-user
+    serial_groups:
+      - card-connector-stg
+      - directdebit-connector-stg
+      - publicapi-stg
+      - publicauth-stg
+      - adminusers-stg
+      - products-stg
+    plan:
+      - get: omnibus
+      - task: create-service
+        file: omnibus/ci/tasks/smoke-test-user.yml
+        params:
+          CF_API: https://api.cloud.service.gov.uk
+          CF_ORG: govuk-pay
+          CF_SPACE: staging
+          CF_SPACE_CDE: staging-cde
+          SERVICE_NAME: smoke-test-user
+
   - name: card-payment-smoke-tests-staging
     serial_groups: [cardid-stg, card-connector-stg, card-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
+        passed: [smoke-test-user]
       - &trigger-test
         get: cardid
         passed: [deploy-cardid-staging]
@@ -370,12 +392,13 @@ jobs:
         params:
           CF_ORG: govuk-pay
           CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-cardp1
+          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-cardp1
 
   - name: direct-debit-smoke-tests-staging
     serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
+        passed: [smoke-test-user]
       - <<: *trigger-test
         get: adminusers
         passed: [deploy-adminusers-staging]
@@ -399,12 +422,13 @@ jobs:
         params:
           CF_ORG: govuk-pay
           CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-directdebitp1
+          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-directdebitp1
 
   - name: products-smoke-test-staging
     serial_groups: [products-stg, products-ui-stg]
     plan:
       - get: omnibus
+        passed: [smoke-test-user]
       - <<: *trigger-test
         get: products
         passed: [deploy-products-staging]
@@ -416,4 +440,4 @@ jobs:
         params:
           CF_ORG: govuk-pay
           CF_SPACE: tools
-          COMMAND: cf ssh endtoend -c /app/bin/smoke-products
+          COMMAND: cf ssh smoke-tests -c /app/bin/smoke-products
