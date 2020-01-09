@@ -135,6 +135,20 @@ jobs:
   - name: create-test-user
     plan:
       - get: omnibus
+        trigger: true
+        passed: [deploy-tools]
+      - get: card-connector
+        passed: [deploy-card-connector]
+      - get: directdebit-connector
+        passed: [deploy-directdebit-connector]
+      - get: publicapi
+        passed: [deploy-publicapi]
+      - get: publicauth
+        passed: [deploy-publicauth]
+      - get: adminusers
+        passed: [deploy-adminusers]
+      - get: products
+        passed: [deploy-products]
       - task: run-client
         file: omnibus/ci/tasks/test-client.yml
         params:
