@@ -149,6 +149,12 @@ resources:
       <<: *image-source
       repository: govukpaypaas/notifications
 
+x-cf-creds: &cf-creds
+  CF_API: https://api.cloud.service.gov.uk
+  CF_USERNAME: ((paas-ireland-username))
+  CF_PASSWORD: ((paas-ireland-password))
+  CF_ORG: govuk-pay
+
 jobs:
   - name: deploy-adminusers-staging
     serial_groups: [adminusers-stg]
@@ -175,7 +181,7 @@ jobs:
         file: omnibus/ci/tasks/cf-task.yml
         input_mapping: { workdir: omnibus }
         params: &bind-db-params
-          CF_ORG: govuk-pay
+          <<: *cf-creds
           CF_SPACE: staging
           CF_SPACE_CDE: staging-cde
           COMMAND: bind_db adminusers adminusers-db
@@ -385,8 +391,7 @@ jobs:
       - task: create-service
         file: omnibus/ci/tasks/smoke-test-user.yml
         params:
-          CF_API: https://api.cloud.service.gov.uk
-          CF_ORG: govuk-pay
+          <<: *cf-creds
           CF_SPACE: staging
           CF_SPACE_CDE: staging-cde
           SERVICE_NAME: smoke-test-user
@@ -419,8 +424,8 @@ jobs:
         passed: [deploy-publicauth-staging]
       - task: run card smoke test
         file: omnibus/ci/tasks/cf-task.yml
-        params:
-          CF_ORG: govuk-pay
+        params: &smoke-test-params
+          <<: *cf-creds
           CF_SPACE: tools
           COMMAND: cf ssh smoke-tests -c /app/bin/smoke-cardp1
 
@@ -450,8 +455,7 @@ jobs:
       - task: run direct debit smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
+          <<: *smoke-test-params
           COMMAND: cf ssh smoke-tests -c /app/bin/smoke-directdebitp1
 
   - name: products-smoke-test-staging
@@ -468,6 +472,5 @@ jobs:
       - task: run products smoke test
         file: omnibus/ci/tasks/cf-task.yml
         params:
-          CF_ORG: govuk-pay
-          CF_SPACE: tools
+          <<: *smoke-test-params
           COMMAND: cf ssh smoke-tests -c /app/bin/smoke-products
