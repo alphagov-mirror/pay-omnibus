@@ -2,6 +2,7 @@
 groups:
   - name: All
     jobs:
+      - update-pipeline
       - deploy-adminusers-staging
       - deploy-cardid-staging
       - deploy-card-connector-staging
@@ -48,6 +49,10 @@ resource_types:
     type: docker-image
     source:
       repository: nulldriver/cf-cli-resource
+  - name: concourse-pipeline
+    type: docker-image
+    source:
+      repository: concourse/concourse-pipeline-resource
 
 resources:
   - name: omnibus
@@ -66,6 +71,15 @@ resources:
       space: staging
       username: ((paas-ireland-username))
       password: ((paas-ireland-password))
+
+  - name: deploy-pipeline
+    type: concourse-pipeline
+    icon: pipe
+    source:
+      teams:
+        - name: pay-deploy
+          username: pay-deploy
+          password: ((readonly_local_user_password))
 
   - &image
     name: adminusers
@@ -156,6 +170,17 @@ x-cf-creds: &cf-creds
   CF_ORG: govuk-pay
 
 jobs:
+  - name: update-pipeline
+    plan:
+      - get: omnibus
+        trigger: true
+      - put: deploy-pipeline
+        params:
+          pipelines:
+            - name: deploy
+              team: pay-deploy
+              config_file: omnibus/ci/pipelines/deploy.yml
+
   - name: deploy-adminusers-staging
     serial_groups: [adminusers-stg]
     plan:
