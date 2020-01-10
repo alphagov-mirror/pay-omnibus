@@ -76,9 +76,10 @@ function bind_db {
 
   cf bind-service "$app" "$service"
 
-  eval $(cf curl /v2/apps/$(cf app --guid "$app")/env | jq -r '.system_env_json.VCAP_SERVICES.postgres[0].credentials | {DB_HOST: .host, DB_USER: .username, DB_PASSWORD: .password} | to_entries | map("\(.key)=\(.value)")[]')
+  eval $(cf curl /v2/apps/$(cf app --guid "$app")/env | jq -r '.system_env_json.VCAP_SERVICES.postgres[0].credentials | {DB_HOST: .host, DB_USER: .username, DB_PASSWORD: .password, DB_NAME: .name} | to_entries | map("\(.key)=\(.value)")[]')
 
   cf set-env "$app" DB_HOST "$DB_HOST"
+  cf set-env "$app" DB_NAME "$DB_NAME"
   cf set-env "$app" DB_USER "$DB_USER"
   cf set-env "$app" DB_PASSWORD "$DB_PASSWORD"
   cf restage "$app"

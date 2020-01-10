@@ -30,7 +30,7 @@ applications:
       JPA_LOG_LEVEL: ((log_level))
       JPA_SQL_LOG_LEVEL: ((log_level))
       DB_HOST: postgres-((space)).apps.internal
-      DB_SSL_OPTION: ssl=false
+      DB_SSL_OPTION: ssl=true
       DB_USER: adminusers
       DB_PASSWORD: mysecretpassword
       LOGIN_ATTEMPT_CAP: '2'
