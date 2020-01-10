@@ -295,16 +295,20 @@ def forward_app(app, port)
   pid = Process.spawn("cf ssh #{app} -L #{port}:localhost:8080 --skip-remote-execution")
   at_exit { Process.kill('INT', pid) }
   Process.detach(pid)
-  STDERR.print("#{app}[#{port}] ")
-  while true
+  STDERR.puts("#{app}[#{port}]: waiting")
+  tries = 0
+  while tries <= 5
     begin
-      break if AppClient.is_app_up?(app)
+      if AppClient.is_app_up?(app)
+        STDERR.puts("#{app}[#{port}]: up")
+        return
+      end
     rescue
     end
-    STDERR.print('.')
-    sleep(0.5)
+    tries += 1
+    sleep(1)
   end
-  STDERR.puts(" up")
+  abort("#{app}[#{port}]: timed out")
 end
 
 STDERR.puts("Forwarding apps:")
