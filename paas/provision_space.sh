@@ -36,12 +36,6 @@ function create_docker_app {
   fi
 }
 
-function create_db {
-  local name="$1"
-
-  cf service "$name" || cf create-service postgres tiny-unencrypted-11 "$name"
-}
-
 function write_space_permissions {
   local org="$1"
   local space="$2"
@@ -63,12 +57,18 @@ function default_space_permissions {
   cf set-space-role "$deployer" "$org" "$space" SpaceDeveloper
 }
 
+function create_db {
+  local name="$1"
+
+  cf service "$name" || cf create-service postgres tiny-unencrypted-11 "$name" -c '{"enable_extensions": ["pg_trgm"]}'
+}
+
 function bind_db {
   local app="$1"
   local service="$2"
 
   echo -n "Waiting for $service to be created "
-  until cf service "$service" | grep -q "create succeeded"; do
+  until cf service "$service" | grep -q "status is 'available'"; do
     echo -n .
     sleep 5
   done
