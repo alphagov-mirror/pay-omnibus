@@ -419,13 +419,13 @@ jobs:
           <<: *cf-creds
           CF_SPACE: staging
           CF_SPACE_CDE: staging-cde
+          CF_SPACE_TOOLS: smoke-tests
           SERVICE_NAME: smoke-test-user
 
   - name: card-payment-smoke-tests-staging
     serial_groups: [cardid-stg, card-connector-stg, card-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
-        passed: [smoke-test-user]
       - &trigger-test
         get: cardid
         passed: [deploy-cardid-staging]
@@ -451,14 +451,13 @@ jobs:
         file: omnibus/ci/tasks/cf-task.yml
         params: &smoke-test-params
           <<: *cf-creds
-          CF_SPACE: tools
+          CF_SPACE: smoke-tests
           COMMAND: cf ssh smoke-tests -c /app/bin/smoke-cardp1
 
   - name: direct-debit-smoke-tests-staging
     serial_groups: [adminusers-stg, directdebit-connector-stg, directdebit-frontend-stg, ledger-stg, publicapi-stg, publicauth-stg]
     plan:
       - get: omnibus
-        passed: [smoke-test-user]
       - <<: *trigger-test
         get: adminusers
         passed: [deploy-adminusers-staging]
@@ -487,7 +486,6 @@ jobs:
     serial_groups: [products-stg, products-ui-stg]
     plan:
       - get: omnibus
-        passed: [smoke-test-user]
       - <<: *trigger-test
         get: products
         passed: [deploy-products-staging]
