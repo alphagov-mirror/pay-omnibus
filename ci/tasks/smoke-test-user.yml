@@ -46,10 +46,13 @@ run:
       gem install bundler
       bundle install
 
-      data=$(bundle exec ./client user)
+      data=$(bundle exec ./client user smoke-test 'Smoke Test')
 
       # Export as environment variables
       eval $(echo "$data" | jq -r 'to_entries | map("export \(.key|ascii_upcase)=\(.value)") | .[]')
+
+      # Create a product for smoke tests
+      bundle exec ./client create_product "$CARD_SANDBOX_API_TOKEN" "Smoke Test" "smoke-test" "product-test-environment"
 
       cf target -s "$CF_SPACE_TOOLS"
       cf create-user-provided-service "$SERVICE_NAME" -p "$data"
