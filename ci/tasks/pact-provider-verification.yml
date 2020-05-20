@@ -42,6 +42,6 @@ run:
       TAG="$(cat src/.git/resource/pr)"
       cd provider
 
-      mvn test -DrunContractTests -DPACT_CONSUMER_TAG="${TAG}" -DPACT_BROKER_USERNAME= -DPACT_BROKER_PASSWORD= \
+      mvn test -DrunContractTests -DPACT_CONSUMER_TAG=${TAG} -DPACT_BROKER_USERNAME=b -DPACT_BROKER_PASSWORD=a \
         -Dpact.provider.version="$(git rev-parse HEAD)" -Dpact.verifier.publishResults=true \
         -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital -DCONSUMER="${consumer}"
