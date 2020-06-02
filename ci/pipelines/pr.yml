@@ -303,6 +303,7 @@ groups:
     jobs:
       - card-connector-unit-test
       - card-connector-integration-test
+      - card-connector-pact-provider-test
       - card-connector-card-e2e
 
   - name: Publicapi
@@ -667,6 +668,59 @@ jobs:
         <<: *put-integration-test-failed-status
         put: card-connector-pull-request
     - <<: *put-integration-test-success-status
+      put: card-connector-pull-request
+
+  - <<: *job-definition
+    name: card-connector-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: card-connector-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: card-connector-pull-request
+    - <<: *get-omnibus
+    - task: provider verification
+      privileged: true
+      config:
+        container_limits: {}
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: govukpay/concourse-runner
+        params:
+          consumer:
+          provider:
+        inputs:
+          - name: src
+        run:
+          path: sh
+          dir: src
+          args:
+            - -ec
+            - |
+
+              function cleanup {
+                echo "CLEANUP TRIGGERED"
+                clean_docker
+                stop_docker
+                echo "CLEANUP COMPLETE"
+              }
+
+
+              trap cleanup EXIT
+              source /docker-helpers.sh
+
+              start_docker
+
+              sha="$(cat .git/resource/head_sha)"
+
+              mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master -DPACT_BROKER_USERNAME=a -DPACT_BROKER_PASSWORD=b \
+                -Dpact.provider.version="$sha" -Dpact.verifier.publishResults=true \
+                -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: card-connector-pull-request
+    - <<: *put-pact-provider-success-status
       put: card-connector-pull-request
 
   - <<: *job-definition
