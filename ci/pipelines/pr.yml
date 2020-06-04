@@ -285,7 +285,7 @@ definitions:
       status: failure
       context: pact provider validation
   - &pact-provider-validation
-    task: <updateThisvalue>
+    task: pact verification
     privileged: true
     file: omnibus/ci/tasks/pact-provider-verification.yml
     params:
@@ -297,46 +297,51 @@ definitions:
     file: omnibus/ci/tasks/pact-provider-check.yml
     params:
       consumer: updateThisValue
-  - &pact-provider-verification-on-provider-change
-    task: provider verification
+  - &pact-param-creation-provider-context
+    task: pact parameter creation for provider tests run in provider context
     privileged: true
+    input_mapping:
+      provider: src
     config:
-      container_limits: {}
       platform: linux
       image_resource:
         type: registry-image
         source:
-          repository: govukpay/concourse-runner
-      params:
-        consumer:
-        provider:
+          repository: alpine/git
       inputs:
-        - name: src
+        - name: provider
+      outputs:
+        - name: pact_params
+
       run:
         path: sh
-        dir: src
         args:
-          - -ec
+          - -c
           - |
+            echo master > pact_params/consumer_tag
+            touch pact_params/verification_needed
+  - &pact-param-creation-consumer-context
+    task: pact parameter conversion for provider tests run in consumer context
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: alpine/git
+      inputs:
+        - name: src
+        - name: provider_requirements
+      outputs:
+        - name: pact_params
 
-            function cleanup {
-              echo "CLEANUP TRIGGERED"
-              clean_docker
-              stop_docker
-              echo "CLEANUP COMPLETE"
-            }
-
-
-            trap cleanup EXIT
-            source /docker-helpers.sh
-
-            start_docker
-
-            sha="$(cat .git/resource/head_sha)"
-
-            mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master -DPACT_BROKER_USERNAME=a -DPACT_BROKER_PASSWORD=b \
-              -Dpact.provider.version="$sha" -Dpact.verifier.publishResults=true \
-              -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital
+      run:
+        path: sh
+        args:
+          - -c
+          - |
+            cp provider_requirements/* pact_params/
+            cp src/.git/resource/pr pact_params/consumer_tag
 
 groups:
   - name: Card Connector
@@ -480,7 +485,7 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: master
+      branch: PP-6504-provider-pact-tests
       username: alphagov-pay-ci
       password: ((github-access-token))
 
@@ -722,7 +727,12 @@ jobs:
     - <<: *put-pact-provider-pending-status
       put: card-connector-pull-request
     - <<: *get-omnibus
-    - <<: *pact-provider-verification-on-provider-change
+    - <<: *pact-param-creation-provider-context
+    - <<: *pact-provider-validation
+      input_mapping:
+        test_target: src
+      params:
+        provider: connector
       on_failure:
         <<: *put-pact-provider-failed-status
         put: card-connector-pull-request
@@ -823,31 +833,33 @@ jobs:
         passed: [publicapi-unit-test]
       - <<: *put-pact-provider-pending-status
         put: publicapi-pull-request
+      - <<: *get-omnibus
       - get: card-connector-master
       - get: ledger-master
       - get: directdebit-connector-master
       - <<: *pact-provider-check
         params:
           consumer: publicapi
+      - <<: *pact-param-creation-consumer-context
       - in_parallel:
         - <<: *pact-provider-validation
           task: connector provider pact validation
           input_mapping:
-            provider: card-connector-master
+            test_target: card-connector-master
           params:
             consumer: publicapi
             provider: connector
         - <<: *pact-provider-validation
           task: ledger provider pact validation
           input_mapping:
-            provider: ledger-master
+            test_target: ledger-master
           params:
             consumer: publicapi
             provider: ledger
         - <<: *pact-provider-validation
           task: directdebit-connector provider pact validation
           input_mapping:
-            provider: directdebit-connector-master
+            test_target: directdebit-connector-master
           params:
             consumer: publicapi
             provider: direct-debit-connector
@@ -925,7 +937,12 @@ jobs:
     - <<: *put-pact-provider-pending-status
       put: adminusers-pull-request
     - <<: *get-omnibus
-    - <<: *pact-provider-verification-on-provider-change
+    - <<: *pact-param-creation-provider-context
+    - <<: *pact-provider-validation
+      input_mapping:
+        test_target: src
+      params:
+        provider: adminusers
       on_failure:
         <<: *put-pact-provider-failed-status
         put: adminusers-pull-request
@@ -1086,7 +1103,12 @@ jobs:
     - <<: *put-pact-provider-pending-status
       put: ledger-pull-request
     - <<: *get-omnibus
-    - <<: *pact-provider-verification-on-provider-change
+    - <<: *pact-param-creation-provider-context
+    - <<: *pact-provider-validation
+      input_mapping:
+        test_target: src
+      params:
+        provider: ledger
       on_failure:
         <<: *put-pact-provider-failed-status
         put: ledger-pull-request
@@ -1158,6 +1180,7 @@ jobs:
       - <<: *pact-provider-check
         params:
           consumer: ledger
+      - <<: *pact-param-creation-consumer-context
       - <<: *pact-provider-validation
         task: connector provider pact validation
         input_mapping:
@@ -1302,7 +1325,12 @@ jobs:
     - <<: *put-pact-provider-pending-status
       put: products-pull-request
     - <<: *get-omnibus
-    - <<: *pact-provider-verification-on-provider-change
+    - <<: *pact-param-creation-provider-context
+    - <<: *pact-provider-validation
+      input_mapping:
+        test_target: src
+      params:
+        provider: products
       on_failure:
         <<: *put-pact-provider-failed-status
         put: products-pull-request
@@ -1378,7 +1406,12 @@ jobs:
     - <<: *put-pact-provider-pending-status
       put: directdebit-connector-pull-request
     - <<: *get-omnibus
-    - <<: *pact-provider-verification-on-provider-change
+    - <<: *pact-param-creation-provider-context
+    - <<: *pact-provider-validation
+      input_mapping:
+        test_target: src
+      params:
+        provider: directdebit-connector
       on_failure:
         <<: *put-pact-provider-failed-status
         put: directdebit-connector-pull-request
@@ -1453,6 +1486,7 @@ jobs:
     - <<: *pact-provider-check
       params:
         consumer: frontend
+    - <<: *pact-param-creation-consumer-context
     - in_parallel:
       - <<: *pact-provider-validation
         task: connector provider pact validation
@@ -1514,6 +1548,7 @@ jobs:
     - <<: *pact-provider-check
       params:
         consumer: selfservice
+    - <<: *pact-param-creation-consumer-context
     - in_parallel:
       - <<: *pact-provider-validation
         task: connector provider pact validation
@@ -1615,6 +1650,7 @@ jobs:
     - <<: *pact-provider-check
       params:
         consumer: products-ui
+    - <<: *pact-param-creation-consumer-context
     - in_parallel:
       - <<: *pact-provider-validation
         task: products provider pact validation
