@@ -297,6 +297,46 @@ definitions:
     file: omnibus/ci/tasks/pact-provider-check.yml
     params:
       consumer: updateThisValue
+  - &pact-provider-verification-on-provider-change
+    task: provider verification
+    privileged: true
+    config:
+      container_limits: {}
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: govukpay/concourse-runner
+      params:
+        consumer:
+        provider:
+      inputs:
+        - name: src
+      run:
+        path: sh
+        dir: src
+        args:
+          - -ec
+          - |
+
+            function cleanup {
+              echo "CLEANUP TRIGGERED"
+              clean_docker
+              stop_docker
+              echo "CLEANUP COMPLETE"
+            }
+
+
+            trap cleanup EXIT
+            source /docker-helpers.sh
+
+            start_docker
+
+            sha="$(cat .git/resource/head_sha)"
+
+            mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master -DPACT_BROKER_USERNAME=a -DPACT_BROKER_PASSWORD=b \
+              -Dpact.provider.version="$sha" -Dpact.verifier.publishResults=true \
+              -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital
 
 groups:
   - name: Card Connector
@@ -319,6 +359,7 @@ groups:
       - adminusers-unit-test
       - adminusers-integration-test
       - adminusers-card-e2e
+      - adminusers-pact-provider-test
 
   - name: Cardid
     jobs:
@@ -331,6 +372,7 @@ groups:
       - ledger-unit-test
       - ledger-integration-test
       - ledger-consumer-pact-test
+      - ledger-pact-provider-test
       - ledger-pact-provider-validation
       - ledger-card-e2e
 
@@ -344,12 +386,14 @@ groups:
     jobs:
       - products-unit-test
       - products-integration-test
+      - products-pact-provider-test
       - products-products-e2e
 
   - name: Direct Debit Connector
     jobs:
       - directdebit-connector-unit-test
       - directdebit-connector-integration-test
+      - directdebit-connector-pact-provider-test
       - directdebit-connector-directdebit-e2e
 
   - name: Products-UI
@@ -678,45 +722,7 @@ jobs:
     - <<: *put-pact-provider-pending-status
       put: card-connector-pull-request
     - <<: *get-omnibus
-    - task: provider verification
-      privileged: true
-      config:
-        container_limits: {}
-        platform: linux
-        image_resource:
-          type: registry-image
-          source:
-            repository: govukpay/concourse-runner
-        params:
-          consumer:
-          provider:
-        inputs:
-          - name: src
-        run:
-          path: sh
-          dir: src
-          args:
-            - -ec
-            - |
-
-              function cleanup {
-                echo "CLEANUP TRIGGERED"
-                clean_docker
-                stop_docker
-                echo "CLEANUP COMPLETE"
-              }
-
-
-              trap cleanup EXIT
-              source /docker-helpers.sh
-
-              start_docker
-
-              sha="$(cat .git/resource/head_sha)"
-
-              mvn test -DrunContractTests -DPACT_CONSUMER_TAG=master -DPACT_BROKER_USERNAME=a -DPACT_BROKER_PASSWORD=b \
-                -Dpact.provider.version="$sha" -Dpact.verifier.publishResults=true \
-                -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital
+    - <<: *pact-provider-verification-on-provider-change
       on_failure:
         <<: *put-pact-provider-failed-status
         put: card-connector-pull-request
@@ -910,6 +916,21 @@ jobs:
         consumer_name: adminusers
     - <<: *put-integration-test-success-status
       put: adminusers-pull-request
+      
+  - <<: *job-definition
+    name: adminusers-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: adminusers-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: adminusers-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-verification-on-provider-change
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: adminusers-pull-request
+    - <<: *put-pact-provider-success-status
+      put: adminusers-pull-request
 
   - <<: *job-definition
     name: adminusers-card-e2e
@@ -1054,6 +1075,22 @@ jobs:
       params:
         consumer_name: ledger
     - <<: *put-integration-test-success-status
+      put: ledger-pull-request
+
+      
+  - <<: *job-definition
+    name: ledger-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: ledger-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: ledger-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-verification-on-provider-change
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: ledger-pull-request
+    - <<: *put-pact-provider-success-status
       put: ledger-pull-request
 
   - <<: *job-definition
@@ -1256,6 +1293,22 @@ jobs:
     - <<: *put-integration-test-success-status
       put: products-pull-request
 
+      
+  - <<: *job-definition
+    name: products-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: products-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: products-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-verification-on-provider-change
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: products-pull-request
+    - <<: *put-pact-provider-success-status
+      put: products-pull-request
+
   - <<: *job-definition
     name: products-products-e2e
     plan:
@@ -1315,6 +1368,21 @@ jobs:
       params:
         consumer_name: directdebit-connector
     - <<: *put-integration-test-success-status
+      put: directdebit-connector-pull-request
+      
+  - <<: *job-definition
+    name: directdebit-connector-pact-provider-test
+    plan:
+    - <<: *get-pull-request
+      resource: directdebit-connector-pull-request
+    - <<: *put-pact-provider-pending-status
+      put: directdebit-connector-pull-request
+    - <<: *get-omnibus
+    - <<: *pact-provider-verification-on-provider-change
+      on_failure:
+        <<: *put-pact-provider-failed-status
+        put: directdebit-connector-pull-request
+    - <<: *put-pact-provider-success-status
       put: directdebit-connector-pull-request
 
   - <<: *job-definition
