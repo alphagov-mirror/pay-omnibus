@@ -3,9 +3,11 @@ platform: linux
 
 image_resource:
   type: registry-image
-  source:
-    repository: alpine
-    tag: 3.12.0
+    source:
+      repository: govukpay/concourse-runner
+      username: ((docker-username))
+      password: ((docker-password))
+      tag: latest
 
 inputs:
   - name: src
