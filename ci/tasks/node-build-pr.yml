@@ -40,6 +40,12 @@ run:
       npm run compile
       npm test -- --forbid-only --forbid-pending
 
+      if [ -f "cypress.json" ]; then
+        npm run cypress:server > /dev/null 2>&1 &
+        sleep 3
+        npm run cypress:test
+      fi
+
       cd ..
 
       cp -R src/* build
