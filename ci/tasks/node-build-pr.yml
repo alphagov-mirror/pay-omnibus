@@ -27,7 +27,7 @@ run:
       apk update
       apk upgrade
       apk add --update --virtual build-dependencies build-base
-      apk add --update bash ca-certificates wget python
+      apk add --update bash ca-certificates wget python xvfb
 
       # For Pact. See: https://docs.pact.io/docker#alpine-linux
       wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
