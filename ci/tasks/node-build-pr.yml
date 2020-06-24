@@ -14,6 +14,7 @@ outputs:
   - name: pacts
 caches:
   - path: npm_cache
+  - path: cypress_cache
 run:
   path: bash
   dir: src
@@ -31,6 +32,7 @@ run:
       #wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
       #wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.29-r0/glibc-2.29-r0.apk
 
+      export CYPRESS_CACHE_FOLDER=$(pwd)/../cypress_cache
       npm config set cache ../npm_cache
       npm rebuild node-sass
       npm ci
