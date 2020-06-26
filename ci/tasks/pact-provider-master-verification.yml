@@ -15,6 +15,13 @@ run:
     - -ec
     - |
 
+      function cleanup {
+        echo "CLEANUP TRIGGERED"
+        clean_docker
+        stop_docker
+        echo "CLEANUP COMPLETE"
+      }
+
       pr_sha="$(git rev-list --no-merges -n 1 HEAD)"
       if $(pact-broker can-i-deploy --pacticipant="$provider" \
                                --version="$pr_sha" \
@@ -24,6 +31,8 @@ run:
         echo "Pacts are valid"
         exit 0;
       fi
+
+      start_docker
 
       mvn test \
         -DrunContractTests \
