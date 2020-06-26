@@ -141,7 +141,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/alphagov/pay-omnibus
-      branch: master
+      branch: PP-6704_run_provider_pacts_master
 
   - name: every-10-minutes
     type: time
@@ -529,26 +529,27 @@ jobs:
       - get: src
         resource: card-connector-source
         trigger: true
-      - <<: *verify-provider-with-consumer
-        task: verify-with-publicapi
-        params:
-          consumer: publicapi
-          provider: connector
-      - <<: *verify-provider-with-consumer
-        task: verify-with-frontend
-        params:
-          consumer: frontend
-          provider: connector
-      - <<: *verify-provider-with-consumer
-        task: verify-with-selfservice
-        params:
-          consumer: selfservice
-          provider: connector
-      - <<: *verify-provider-with-consumer
-        task: verify-with-ledger
-        params:
-          consumer: ledger
-          provider: connector
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-publicapi
+          params:
+            consumer: publicapi
+            provider: connector
+        - <<: *verify-provider-with-consumer
+          task: verify-with-frontend
+          params:
+            consumer: frontend
+            provider: connector
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: connector
+        - <<: *verify-provider-with-consumer
+          task: verify-with-ledger
+          params:
+            consumer: ledger
+            provider: connector
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app

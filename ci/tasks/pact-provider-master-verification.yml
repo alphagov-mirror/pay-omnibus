@@ -2,10 +2,10 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: pactfoundation/pact-cli
+    repository: rorymalcolm/pay-docker-scratches
 params:
-  consumer: change-this-value
-  provider: change-this-value
+  consumer:
+  provider:
 inputs:
   - name: src
 run:
