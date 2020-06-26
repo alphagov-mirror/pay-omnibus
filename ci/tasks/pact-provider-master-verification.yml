@@ -22,6 +22,9 @@ run:
         echo "CLEANUP COMPLETE"
       }
 
+      trap cleanup EXIT
+      source /docker-helpers.sh
+
       pr_sha="$(git rev-list --no-merges -n 1 HEAD)"
       if pact-broker can-i-deploy --pacticipant="$provider" \
                                --version="$pr_sha" \
