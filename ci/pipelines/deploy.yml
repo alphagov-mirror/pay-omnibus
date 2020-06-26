@@ -457,6 +457,17 @@ jobs:
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
         params:
           consumer_name: products-ui
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-products-ui
+          params:
+            consumer: products-ui
+            provider: products
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: products
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -605,6 +616,17 @@ jobs:
       - get: src
         resource: adminusers-source
         trigger: true
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-products-ui
+          params:
+            consumer: products-ui
+            provider: adminusers
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: adminusers
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
@@ -647,6 +669,17 @@ jobs:
         file: omnibus/ci/tasks/tag-pacts-with-master.yml
         params:
           consumer_name: ledger
+      - in_parallel:
+        - <<: *verify-provider-with-consumer
+          task: verify-with-publicapi
+          params:
+            consumer: publicapi
+            provider: ledger
+        - <<: *verify-provider-with-consumer
+          task: verify-with-selfservice
+          params:
+            consumer: selfservice
+            provider: ledger
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
