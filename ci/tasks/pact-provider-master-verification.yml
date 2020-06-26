@@ -1,0 +1,36 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: pactfoundation/pact-cli
+params:
+  consumer: change-this-value
+  provider: change-this-value
+inputs:
+  - name: src
+run:
+  path: bash
+  dir: src
+  args:
+    - -ec
+    - |
+
+      pr_sha="$(git rev-list --no-merges -n 1 HEAD)"
+      if $(pact-broker can-i-deploy --pacticipant="$provider" \
+                               --version="$pr_sha" \
+                               --pacticipant="$consumer" \
+                               --latest="master" \
+                               --broker-base-url="$BROKER"); then
+        echo "Pacts are valid"
+        exit 0;
+      fi
+
+      mvn test \
+        -DrunContractTests \
+        -DCONSUMER="$consumer" \
+        -DPACT_CONSUMER_TAG="master" \
+        -Dpact.provider.version="$pr_sha" \
+        -Dpact.verifier.publishResults=true \
+        -DPACT_BROKER_HOST=pay-concourse-pact-broker.cloudapps.digital \
+        -DPACT_BROKER_USERNAME=b \
+        -DPACT_BROKER_PASSWORD=a

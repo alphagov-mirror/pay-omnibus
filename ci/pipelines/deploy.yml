@@ -1,5 +1,5 @@
 ---
-definitions: 
+definitions:
   - &notify-hg
     task: change-this-value
     file: omnibus/ci/tasks/send-hg-metric.yml
@@ -8,7 +8,12 @@ definitions:
       HOSTED_GRAPHITE_API_KEY: change-this-value
       METRIC_NAME: change-this-value
       METRIC_VALUE: 0
-
+  - &verify-provider-with-consumer
+    task: verify-provider-with-consumer-master-pacts
+    file: omnibus/ci/tasks/pact-provider-master-verification.yml
+    params:
+      consumer: change-this-value
+      provider: change-this-value
 groups:
   - name: Adminusers
     jobs:
@@ -524,6 +529,26 @@ jobs:
       - get: src
         resource: card-connector-source
         trigger: true
+      - <<: *verify-provider-with-consumer
+        task: verify-with-publicapi
+        params:
+          consumer: publicapi
+          provider: connector
+      - <<: *verify-provider-with-consumer
+        task: verify-with-frontend
+        params:
+          consumer: frontend
+          provider: connector
+      - <<: *verify-provider-with-consumer
+        task: verify-with-selfservice
+        params:
+          consumer: selfservice
+          provider: connector
+      - <<: *verify-provider-with-consumer
+        task: verify-with-ledger
+        params:
+          consumer: ledger
+          provider: connector
       - task: calculate-release-number
         file: omnibus/ci/tasks/calculate-release-number.yml
       - task: build-app
