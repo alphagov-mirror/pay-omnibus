@@ -23,11 +23,11 @@ run:
       }
 
       pr_sha="$(git rev-list --no-merges -n 1 HEAD)"
-      if $(pact-broker can-i-deploy --pacticipant="$provider" \
+      if pact-broker can-i-deploy --pacticipant="$provider" \
                                --version="$pr_sha" \
                                --pacticipant="$consumer" \
                                --latest="master" \
-                               --broker-base-url="$BROKER"); then
+                               --broker_base_url='https://pay-concourse-pact-broker.cloudapps.digital'; then
         echo "Pacts are valid"
         exit 0;
       fi
