@@ -25,7 +25,7 @@ run:
         echo "CLEANUP COMPLETE"
       }
 
-      echo $broker-username
+      echo ${broker-username}
 
       function needs_verification() {
         grep "^${provider}" pact_params/providers_needing_verification || test -f pact_params/verification_needed
