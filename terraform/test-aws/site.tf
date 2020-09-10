@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket = "govuk-pay-test-tfstate"
-    key    = "account.tfstate"
+    key    = "test.tfstate"
     region = "eu-west-1"
   }
 }
@@ -39,7 +39,7 @@ variable "rds_instances" {
   default = {}
 }
 
-module "staging" {
+module "test" {
   source = "../modules/aws"
 
   providers = {
@@ -49,8 +49,8 @@ module "staging" {
     pass.low-pass = pass.low-pass
   }
 
-  environment           = "staging"
-  domain_name           = "gdspay.uk"
+  environment           = "test"
+  domain_name           = "test.gdspay.uk"
   paas_domain           = "cloudapps.digital"
   vpc_cidr              = "172.17.0.0/16"
   paas_vpc_peering_name = null
